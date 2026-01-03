@@ -27,7 +27,7 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      await login(email)
+      await login(email, password)
       alert({
         title: "Account created!",
         description: "Welcome to ColorfulBlog.",

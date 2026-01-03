@@ -1,62 +1,118 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, createContext, useContext } from "react"
+import api from "../lib/api"
 
 interface User {
-  id: string
+  id: number
   name: string
   email: string
-  avatar?: string
-  bio?: string
 }
 
 interface AuthContextType {
   user: User | null
-  login: (email: string) => void
-  logout: () => void
+  login: (email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
   isAuthenticated: boolean
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session in localStorage
-    const savedUser = localStorage.getItem("blog_user")
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    const initAuth = async () => {
+      const token = localStorage.getItem("access_token")
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const res = await api.get<User>("/api/v1/auth/me")
+        setUser(res.data)
+      } catch (err) {
+        localStorage.removeItem("access_token")
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    initAuth()
   }, [])
 
-  const login = (email: string) => {
-    const newUser = {
-      id: "user-1",
-      name: email.split("@")[0],
-      email: email,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      bio: "Blog enthusiast and storyteller.",
-    }
-    setUser(newUser)
-    localStorage.setItem("blog_user", JSON.stringify(newUser))
+  /**
+   * LOGIN
+   */
+  const login = async (email: string, password: string) => {
+    const res = await api.post("/api/v1/auth/login", {
+      email,
+      password,
+    })
+
+    const { access_token } = res.data
+    localStorage.setItem("access_token", access_token)
+
+    const me = await api.get<User>("/api/v1/auth/me")
+    setUser(me.data)
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("blog_user")
+  /**
+   * REGISTER
+   */
+  const register = async (name: string, email: string, password: string) => {
+    const res = await api.post("/api/v1/auth/register", {
+      name,
+      email,
+      password,
+    })
+
+    const { access_token } = res.data
+    localStorage.setItem("access_token", access_token)
+
+    const me = await api.get<User>("/api/v1/auth/me")
+    setUser(me.data)
+  }
+
+  /**
+   * LOGOUT
+   */
+  const logout = async () => {
+    try {
+      await api.post("/api/v1/auth/logout")
+    } catch {
+      // ignore backend logout errors
+    } finally {
+      localStorage.removeItem("access_token")
+      setUser(null)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        isAuthenticated: !!user,
+        loading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
   )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider")
   }
   return context

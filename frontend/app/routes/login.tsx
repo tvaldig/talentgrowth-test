@@ -26,7 +26,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email)
+      await login(email, password)
       alert({
         title: "Welcome back!",
         description: "Successfully logged in.",

@@ -24,7 +24,6 @@ function ProfileContent() {
   //const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [username, setUsername] = useState(user?.name || "")
-  const [bio, setBio] = useState(user?.bio || "")
 
   const userPosts = allPosts.filter((post) => post.author === user?.name)
 
@@ -38,7 +37,6 @@ function ProfileContent() {
 
   const handleCancel = () => {
     setUsername(user?.name || "")
-    setBio(user?.bio || "")
     setIsEditing(false)
   }
 
@@ -53,7 +51,7 @@ function ProfileContent() {
           <CardHeader className="relative -mt-16 pb-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
               <Avatar className="w-32 h-32 border-4 border-white shadow-xl">
-                <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                <AvatarImage src={"/placeholder.svg"} alt={user.name} />
                 <AvatarFallback className="text-4xl">{user.name[0].toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-grow">
@@ -96,21 +94,6 @@ function ProfileContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
-            <div>
-              <Label className="text-sm font-semibold text-muted-foreground">Bio</Label>
-              {isEditing ? (
-                <Textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell us about yourself..."
-                  className="mt-2 min-h-[100px]"
-                />
-              ) : (
-                <p className="mt-2 text-foreground leading-relaxed">
-                  {user.bio || "No bio yet. Click Edit Profile to add one!"}
-                </p>
-              )}
-            </div>
 
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="w-4 h-4" />
