@@ -30,14 +30,14 @@ def get_db():
 class AuthHandler:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-    # 🔐 Password hashing
+    # Password hashing
     def get_password_hash(self, password: str) -> str:
         return self.pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    # 👤 Authenticate user
+    # Authenticate user
     def authenticate_user(self, db: Session, email: str, password: str):
         user = db.query(User).filter(User.email == email).first()
         if not user:
@@ -46,7 +46,7 @@ class AuthHandler:
             return None
         return user
 
-    # 🎟 Create JWT
+    # Create JWT
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()
         expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
@@ -54,7 +54,7 @@ class AuthHandler:
 
         return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-    # 🔎 Get user from token
+    # Get user from token
     def get_current_user(
         self,
         credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -87,8 +87,6 @@ class AuthHandler:
 
         return UserPass(
             id=user.id,
-            nama=user.nama,
+            name=user.name,
             email=user.email,
-            no_telepon=user.no_telepon,
-            role=user.role,
         )
