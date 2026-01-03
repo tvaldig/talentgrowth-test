@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from config.db import SessionLocal
 from models.user import User
-from schemas.user import UserRegister, UserLogin, UserOut
+from schemas.user import UserPass, UserRegister, UserLogin, UserOut
 from schemas.token import Token
 from middleware.authentication import AuthHandler
 
@@ -66,3 +66,9 @@ async def login(form_data: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(auth.get_current_user)):
     return current_user
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(current_user: UserPass = Depends(auth.get_current_user)):
+    return {
+        "message": "Logged out successfully"
+    }

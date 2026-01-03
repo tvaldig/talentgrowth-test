@@ -46,7 +46,7 @@ def get_posts(
 
     query = db.query(Post)
 
-    # 🔍 Search by title OR content
+    # Search by title OR content
     if search:
         query = query.filter(
             or_(
