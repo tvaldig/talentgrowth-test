@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import List
 
 from config.db import SessionLocal
 from models.post import Post
-from schemas.post import PostCreate, PostUpdate, PostOut
+from schemas.post import PaginatedPosts, PostCreate, PostUpdate, PostOut
 from middleware.authentication import auth
 from middleware.ownership import check_owner
 
@@ -34,9 +35,42 @@ def create_post(
     db.refresh(db_post)
     return db_post
 
-@router.get("/", response_model=List[PostOut])
-def get_posts(db: Session = Depends(get_db)):
-    return db.query(Post).all()
+@router.get("/", response_model=PaginatedPosts)
+def get_posts(
+    db: Session = Depends(get_db),
+    search: str | None = Query(default=None, min_length=1),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+):
+    offset = (page - 1) * limit
+
+    query = db.query(Post)
+
+    # 🔍 Search by title OR content
+    if search:
+        query = query.filter(
+            or_(
+                Post.title.ilike(f"%{search}%"),
+                Post.content.ilike(f"%{search}%"),
+            )
+        )
+
+    total = query.count()
+
+    posts = (
+        query
+        .order_by(Post.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "items": posts,
+    }
 
 
 @router.get("/{post_id}", response_model=PostOut)

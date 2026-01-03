@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -18,3 +19,9 @@ class PostOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class PaginatedPosts(BaseModel):
+    total: int
+    page: int
+    limit: int
+    items: List[PostOut]
