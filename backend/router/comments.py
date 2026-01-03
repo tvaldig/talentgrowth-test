@@ -5,9 +5,8 @@ from typing import List
 from config.db import SessionLocal
 from models.comment import Comment
 from schemas.comment import CommentCreate, CommentUpdate, CommentOut
-from middleware.authorization import JWTHandler
 from middleware.ownership import check_owner
-
+from middleware.authentication import auth
 router = APIRouter(tags=["Comments"])
 
 def get_db():
@@ -22,7 +21,7 @@ def add_comment(
     post_id: int,
     comment: CommentCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     db_comment = Comment(
         content=comment.content,
@@ -46,7 +45,7 @@ def update_comment(
     comment_id: int,
     comment: CommentUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:
@@ -64,7 +63,7 @@ def update_comment(
 def delete_comment(
     comment_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     db_comment = db.query(Comment).filter(Comment.id == comment_id).first()
     if not db_comment:

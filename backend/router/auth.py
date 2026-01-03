@@ -7,7 +7,6 @@ from models.user import User
 from schemas.user import UserRegister, UserLogin, UserOut
 from schemas.token import Token
 from middleware.authentication import AuthHandler
-from middleware.authorization import JWTHandler
 
 router = APIRouter()
 auth = AuthHandler()
@@ -65,5 +64,5 @@ async def login(form_data: UserLogin, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserOut)
-async def read_users_me(current_user: User = Depends(JWTHandler())):
+async def read_users_me(current_user: User = Depends(auth.get_current_user)):
     return current_user

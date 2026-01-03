@@ -16,8 +16,8 @@ async def root():
     return {"message": "Talent Growth Test - Blog App API"}
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
-app.include_router(comments.router, prefix="/api/v1/devices", tags=["Comments"])
-app.include_router(posts.router, prefix="/api/v1/patients", tags=["Posts"])
+app.include_router(comments.router, prefix="/api/v1", tags=["Comments"])
+app.include_router(posts.router, prefix="/api/v1", tags=["Posts"])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -5,7 +5,7 @@ from typing import List
 from config.db import SessionLocal
 from models.post import Post
 from schemas.post import PostCreate, PostUpdate, PostOut
-from middleware.authorization import JWTHandler
+from middleware.authentication import auth
 from middleware.ownership import check_owner
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
@@ -21,7 +21,7 @@ def get_db():
 def create_post(
     post: PostCreate,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     db_post = Post(
         title=post.title,
@@ -52,7 +52,7 @@ def update_post(
     post_id: int,
     post_update: PostUpdate,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
@@ -72,7 +72,7 @@ def update_post(
 def delete_post(
     post_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(JWTHandler())
+    current_user = Depends(auth.get_current_user)
 ):
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
