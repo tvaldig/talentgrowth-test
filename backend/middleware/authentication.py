@@ -90,3 +90,5 @@ class AuthHandler:
             name=user.name,
             email=user.email,
         )
+
+auth = AuthHandler()
