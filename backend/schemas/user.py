@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 class UserRegister(BaseModel):
@@ -10,6 +11,14 @@ class UserLogin(BaseModel):
     password: str
 
 class UserOut(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+
+    class Config:
+        orm_mode = True
+
+class UserPass(BaseModel):
     id: int
     name: str
     email: EmailStr

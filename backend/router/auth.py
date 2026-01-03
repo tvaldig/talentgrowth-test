@@ -28,11 +28,9 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     hashed_password = auth.get_password_hash(user.password)
 
     new_user = User(
-        nama=user.nama,
+        name=user.name,
         email=user.email,
-        no_telepon=user.no_telepon,
         password_hash=hashed_password,
-        role=user.role,
     )
 
     db.add(new_user)
