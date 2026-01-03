@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from datetime import timedelta
+
+from config.db import SessionLocal
+from models.user import User
+from schemas.user import UserRegister, UserLogin, UserOut
+from schemas.token import Token
+from middleware.authentication import AuthHandler
+from middleware.authorization import JWTHandler
+
+router = APIRouter()
+auth = AuthHandler()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.post("/register", response_model=Token)
+async def register(user: UserRegister, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+
+    hashed_password = auth.get_password_hash(user.password)
+
+    new_user = User(
+        nama=user.nama,
+        email=user.email,
+        no_telepon=user.no_telepon,
+        password_hash=hashed_password,
+        role=user.role,
+    )
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    access_token_expires = timedelta(minutes=15)
+    access_token = auth.create_access_token(
+        data={"sub": new_user.email},
+        expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/login", response_model=Token)
+async def login(form_data: UserLogin, db: Session = Depends(get_db)):
+    user = auth.authenticate_user(db, form_data.email, form_data.password)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    access_token_expires = timedelta(minutes=15)
+    access_token = auth.create_access_token(
+        data={"sub": user.email},
+        expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@router.get("/me", response_model=UserOut)
+async def read_users_me(current_user: User = Depends(JWTHandler())):
+    return current_user
