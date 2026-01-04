@@ -1,6 +1,4 @@
-"use client"
-
-import { Link } from "react-router"
+import { Link } from "react-router-dom"
 import { Button } from "./ui/button"
 import { PlusCircle, PenTool, User, LogOut } from "lucide-react"
 import { useAuth } from "hooks/use-auth"

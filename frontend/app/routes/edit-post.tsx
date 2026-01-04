@@ -1,62 +1,60 @@
-"use client"
-
-import { useParams, useNavigate } from "react-router"
+import { useParams, useNavigate } from "react-router-dom"
+import { useEffect } from "react"
 import { Navbar } from "../components/navbar"
 import { Footer } from "../components/footer"
 import { ProtectedRoute } from "../components/protected-route"
 import { useBlog } from "../../hooks/use-blog"
 import { useAuth } from "../../hooks/use-auth"
 import { BlogForm } from "../components/blog-form"
-import { useEffect } from "react"
 
 function EditPostContent() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { allPosts, updatePost } = useBlog()
-  const { user } = useAuth()
-  //const { toast } = useToast()
 
-  const post = allPosts.find((p) => p.id === id)
+  const { posts, updatePost } = useBlog()
+  const { user } = useAuth()
+
+  const postId = Number(id)
+
+  const post = posts.find((p) => p.id === postId)
 
   useEffect(() => {
-    if (post && user && post.author !== user.name) {
-      alert({
-        title: "Access denied",
-        description: "You can only edit your own posts.",
-        variant: "destructive",
-      })
-      navigate(`/post/${post.id}`)
+    if (!post) return
+
+    if (user && post.authorId !== user.id) {
+      navigate(`/post/${post.id}`, { replace: true })
     }
   }, [post, user, navigate])
 
-  if (!post) {
-    return null
-  }
+  if (!post || !user) return null
 
-  if (user && post.author !== user.name) {
-    return null
-  }
+  if (post.authorId !== user.id) return null
 
-  const handleSubmit = (data: any) => {
-    updatePost(post.id, data)
-    alert({
-      title: "Updated!",
-      description: "Your blog post has been successfully updated.",
+  const handleSubmit = (data: { title: string; content: string }) => {
+    updatePost(post.id, {
+      title: data.title,
+      content: data.content,
     })
+
     navigate(`/post/${post.id}`)
   }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+
       <main className="flex-grow">
         <BlogForm
-          initialData={post}
+          initialData={{
+            title: post.title,
+            content: post.content,
+          }}
           onSubmit={handleSubmit}
           title="Edit Post"
           description="Update your content and keep your readers engaged."
         />
       </main>
+
       <Footer />
     </div>
   )

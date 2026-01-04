@@ -1,18 +1,11 @@
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Calendar, User } from "lucide-react"
-import { Link } from "react-router"
+import { Link } from "react-router-dom"
+import type { UIBlogPost } from "lib/types"
 
 interface BlogCardProps {
-  post: {
-    id: string
-    title: string
-    excerpt: string
-    author: string
-    date: string
-    category: string
-    color: string
-  }
+  post: UIBlogPost
 }
 
 export function BlogCard({ post }: BlogCardProps) {
@@ -25,12 +18,12 @@ export function BlogCard({ post }: BlogCardProps) {
         </h3>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">{post.excerpt}</p>
+        <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed text-ellipsis">{post.content}</p>
       </CardContent>
       <CardFooter className="flex items-center justify-between pt-4 text-xs text-muted-foreground border-t bg-muted/10">
         <div className="flex items-center gap-1">
           <User className="w-3 h-3" />
-          <span>{post.author}</span>
+          <span>{post.authorName}</span>
         </div>
         <div className="flex items-center gap-1">
           <Calendar className="w-3 h-3" />

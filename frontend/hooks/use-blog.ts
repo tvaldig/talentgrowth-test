@@ -1,62 +1,169 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { INITIAL_POSTS, type Post } from "lib/blog-data"
+import { useEffect, useState } from "react"
+import api from "../lib/api"
+import type {
+  PaginatedPosts,
+  Comment,
+  Post as ApiPost,
+} from "../lib/types"
+import type { UIBlogPost } from "../lib/types"
+
+const COLORS = [
+  "bg-blue-500",
+  "bg-purple-500",
+  "bg-emerald-500",
+  "bg-orange-500",
+  "bg-pink-500",
+]
+
+function mapPostToUI(post: ApiPost): UIBlogPost {
+  return {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    authorId: post.author.id,
+    authorName: post.author.name,
+    date: new Date(post.created_at).toLocaleDateString(),
+    color: COLORS[post.id % COLORS.length],
+  }
+}
 
 export function useBlog() {
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS)
+  /** PUBLIC POSTS */
+  const [posts, setPosts] = useState<UIBlogPost[]>([])
+  const [loading, setLoading] = useState(false)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  /** MY POSTS */
+  const [myPosts, setMyPosts] = useState<UIBlogPost[]>([])
+
   const postsPerPage = 3
 
-  const filteredPosts = useMemo(() => {
-    return posts.filter(
-      (post) =>
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.author.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
-  }, [posts, searchQuery])
+  /**
+   * FETCH PUBLIC POSTS
+   */
+  const fetchPosts = async () => {
+    setLoading(true)
+    try {
+      const res = await api.get<PaginatedPosts>("/api/v1/posts", {
+        params: {
+          page: currentPage,
+          limit: postsPerPage,
+          search: searchQuery || undefined,
+        },
+      })
 
-  const totalPages = Math.ceil(filteredPosts.length / postsPerPage)
-
-  const currentPosts = useMemo(() => {
-    const indexOfLastPost = currentPage * postsPerPage
-    const indexOfFirstPost = indexOfLastPost - postsPerPage
-    return filteredPosts.slice(indexOfFirstPost, indexOfLastPost)
-  }, [filteredPosts, currentPage])
-
-  const addPost = (newPost: Omit<Post, "id" | "date" | "comments" | "color">) => {
-    const post: Post = {
-      ...newPost,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString().split("T")[0],
-      comments: [],
-      color: ["bg-blue-500", "bg-purple-500", "bg-emerald-500", "bg-orange-500", "bg-pink-500"][
-        Math.floor(Math.random() * 5)
-      ],
+      setPosts(res.data.items.map(mapPostToUI))
+      setTotalPages(Math.ceil(res.data.total / postsPerPage))
+    } finally {
+      setLoading(false)
     }
-    setPosts((prev) => [post, ...prev])
   }
 
-  const updatePost = (id: string, updatedFields: Partial<Post>) => {
-    setPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updatedFields } : post)))
+  /**
+   * FETCH MY POSTS
+   */
+  const fetchMyPosts = async () => {
+    const res = await api.get<ApiPost[]>("/api/v1/posts/me")
+    setMyPosts(res.data.map(mapPostToUI))
   }
 
-  const deletePost = (id: string) => {
-    setPosts((prev) => prev.filter((post) => post.id !== id))
+  useEffect(() => {
+    fetchPosts()
+  }, [currentPage, searchQuery])
+
+  /**
+   * CREATE POST
+   */
+  const addPost = async (data: { title: string; content: string }) => {
+    const res = await api.post<ApiPost>("/api/v1/posts", data)
+    const uiPost = mapPostToUI(res.data)
+
+    setPosts((prev) => [uiPost, ...prev])
+    setMyPosts((prev) => [uiPost, ...prev])
+  }
+
+  /**
+   * UPDATE POST
+   */
+  const updatePost = async (
+    id: number,
+    data: Partial<Pick<ApiPost, "title" | "content">>
+  ) => {
+    const res = await api.put<ApiPost>(`/api/v1/posts/${id}`, data)
+    const updated = mapPostToUI(res.data)
+
+    setPosts((prev) => prev.map((p) => (p.id === id ? updated : p)))
+    setMyPosts((prev) => prev.map((p) => (p.id === id ? updated : p)))
+  }
+
+  /**
+   * DELETE POST
+   */
+  const deletePost = async (id: number) => {
+    await api.delete(`/api/v1/posts/${id}`)
+
+    setPosts((prev) => prev.filter((p) => p.id !== id))
+    setMyPosts((prev) => prev.filter((p) => p.id !== id))
+  }
+
+  /**
+   * COMMENTS
+   */
+  const getComments = async (postId: number) => {
+    const res = await api.get<Comment[]>(
+      `/api/v1/posts/${postId}/comments`
+    )
+    return res.data
+  }
+
+  const addComment = async (postId: number, content: string) => {
+    const res = await api.post<Comment>(
+      `/api/v1/posts/${postId}/comments`,
+      { content }
+    )
+    return res.data
+  }
+
+  const updateComment = async (commentId: number, content: string) => {
+    const res = await api.put<Comment>(
+      `/api/v1/comments/${commentId}`,
+      { content }
+    )
+    return res.data
+  }
+
+  const deleteComment = async (commentId: number) => {
+    await api.delete(`/api/v1/comments/${commentId}`)
   }
 
   return {
-    posts: currentPosts,
-    allPosts: posts,
+    /** PUBLIC */
+    posts,
+    loading,
     searchQuery,
     setSearchQuery,
     currentPage,
     setCurrentPage,
     totalPages,
+
+    /** PROFILE */
+    myPosts,
+    fetchMyPosts,
+
+    /** MUTATIONS */
     addPost,
     updatePost,
     deletePost,
+
+    /** COMMENTS */
+    getComments,
+    addComment,
+    updateComment,
+    deleteComment,
   }
 }

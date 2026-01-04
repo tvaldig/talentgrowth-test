@@ -1,6 +1,4 @@
-"use client"
-
-import { useNavigate } from "react-router"
+import { useNavigate } from "react-router-dom"
 import { Navbar } from "../components/navbar"
 import { Footer } from "../components/footer"
 import { ProtectedRoute } from "../components/protected-route"

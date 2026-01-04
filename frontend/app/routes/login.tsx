@@ -1,8 +1,6 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
-import { Link, useNavigate } from "react-router"
+import { Link, useNavigate } from "react-router-dom"
 import { Navbar } from "../components/navbar"
 import { Footer } from "../components/footer"
 import { useAuth } from "../../hooks/use-auth"
@@ -10,7 +8,7 @@ import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
 import { Label } from "../components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-//import { useToast } from "@/hooks/use-toast"
+import toast, { Toaster } from 'react-hot-toast';
 import { Loader2, Mail, Lock } from "lucide-react"
 
 export default function LoginPage() {
@@ -19,7 +17,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
-  //const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,17 +24,10 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      alert({
-        title: "Welcome back!",
-        description: "Successfully logged in.",
-      })
+      toast.success("Login successful!")
       navigate("/")
     } catch (error) {
-      alert({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      })
+      toast.error("Login failed. Please check your credentials and try again.")
     } finally {
       setIsLoading(false)
     }
@@ -45,6 +35,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Toaster />
       <Navbar />
       <main className="flex-grow flex items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-2xl border-primary/10 overflow-hidden">
