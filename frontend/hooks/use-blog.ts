@@ -49,7 +49,7 @@ export function useBlog() {
   const fetchPosts = async () => {
     setLoading(true)
     try {
-      const res = await api.get<PaginatedPosts>("/api/v1/posts", {
+      const res = await api.get<PaginatedPosts>("/api/v1/posts/", {
         params: {
           page: currentPage,
           limit: postsPerPage,
@@ -80,7 +80,7 @@ export function useBlog() {
    * CREATE POST
    */
   const addPost = async (data: { title: string; content: string }) => {
-    const res = await api.post<ApiPost>("/api/v1/posts", data)
+    const res = await api.post<ApiPost>("/api/v1/posts/", data)
     const uiPost = mapPostToUI(res.data)
 
     setPosts((prev) => [uiPost, ...prev])
