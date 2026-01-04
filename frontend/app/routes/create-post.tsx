@@ -5,25 +5,22 @@ import { ProtectedRoute } from "../components/protected-route"
 import { useBlog } from "../../hooks/use-blog"
 import { useAuth } from "../../hooks/use-auth"
 import { BlogForm } from "../components/blog-form"
-// import { useToast } from "../../hooks/use-toast"
+import toast, { Toaster } from 'react-hot-toast';
 
 function CreatePostContent() {
   const navigate = useNavigate()
   const { addPost } = useBlog()
   const { user } = useAuth()
-//   const { toast } = useToast()
 
   const handleSubmit = (data: any) => {
     addPost({ ...data, author: user?.name || "Anonymous" })
-    alert({
-      title: "Success!",
-      description: "Your blog post has been created.",
-    })
+    toast.success("Post created successfully!")
     navigate("/")
   }
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Toaster />
       <Navbar />
       <main className="flex-grow">
         <BlogForm
