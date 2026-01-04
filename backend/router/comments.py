@@ -1,20 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
-from config.db import SessionLocal
+from config.db import SessionLocal, get_db
 from models.comment import Comment
 from schemas.comment import CommentCreate, CommentUpdate, CommentOut
 from middleware.ownership import check_owner
 from middleware.authentication import auth
 router = APIRouter(tags=["Comments"])
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/posts/{post_id}/comments", response_model=CommentOut)
 def add_comment(
@@ -37,7 +31,7 @@ def add_comment(
 
 @router.get("/posts/{post_id}/comments", response_model=List[CommentOut])
 def get_comments(post_id: int, db: Session = Depends(get_db)):
-    return db.query(Comment).filter(Comment.post_id == post_id).all()
+    return db.query(Comment).options(joinedload(Comment.author)).filter(Comment.post_id == post_id).all()
 
 
 @router.put("/comments/{comment_id}", response_model=CommentOut)

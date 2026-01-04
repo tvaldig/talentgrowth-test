@@ -1,22 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
-from config.db import SessionLocal
+from config.db import SessionLocal, get_db
 from models.post import Post
 from schemas.post import PaginatedPosts, PostCreate, PostUpdate, PostOut
 from middleware.authentication import auth
 from middleware.ownership import check_owner
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/", response_model=PostOut)
 def create_post(
@@ -44,7 +37,7 @@ def get_posts(
 ):
     offset = (page - 1) * limit
 
-    query = db.query(Post)
+    query = db.query(Post).options(joinedload(Post.author))
 
     # Search by title OR content
     if search:
@@ -75,7 +68,12 @@ def get_posts(
 
 @router.get("/{post_id}", response_model=PostOut)
 def get_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.id == post_id).first()
+    post = (
+    db.query(Post)
+    .options(joinedload(Post.author))
+    .filter(Post.id == post_id)
+    .first()
+    )
     if not post:
         raise HTTPException(404, "Post not found")
     return post
@@ -116,3 +114,10 @@ def delete_post(
 
     db.delete(post)
     db.commit()
+
+@router.get("/posts/me")
+def my_posts(
+  db: Session = Depends(get_db),
+  current_user = Depends(auth.get_current_user)
+):
+  return db.query(Post).options(joinedload(Post.author)).filter(Post.author_id == current_user.id).all()

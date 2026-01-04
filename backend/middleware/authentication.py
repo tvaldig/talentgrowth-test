@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 import os
 
-from config.db import SessionLocal
+from config.db import SessionLocal, get_db
 from models.user import User
 from schemas.user import UserPass
 from schemas.token import TokenData
@@ -18,14 +18,6 @@ SECRET_KEY = os.getenv("KEY")
 ALGORITHM = "HS256"
 
 security = HTTPBearer()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 class AuthHandler:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -85,10 +77,6 @@ class AuthHandler:
         if not user:
             raise credentials_exception
 
-        return UserPass(
-            id=user.id,
-            name=user.name,
-            email=user.email,
-        )
+        return user
 
 auth = AuthHandler()

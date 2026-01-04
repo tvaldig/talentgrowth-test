@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel
+from schemas.user import AuthorOut
 from datetime import datetime
 
 class PostCreate(BaseModel):
@@ -14,7 +15,7 @@ class PostOut(BaseModel):
     id: int
     title: str
     content: str
-    author_id: int
+    author: AuthorOut
     created_at: datetime
 
     class Config:

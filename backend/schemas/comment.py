@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from schemas.user import AuthorOut
 
 class CommentCreate(BaseModel):
     content: str
@@ -10,7 +11,7 @@ class CommentUpdate(BaseModel):
 class CommentOut(BaseModel):
     id: int
     content: str
-    author_id: int
+    author: AuthorOut
     post_id: int
     created_at: datetime
 

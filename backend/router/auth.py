@@ -2,21 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import timedelta
 
-from config.db import SessionLocal
+from config.db import SessionLocal, get_db
 from models.user import User
-from schemas.user import UserPass, UserRegister, UserLogin, UserOut
+from schemas.user import UserPass, UserRegister, UserLogin, UserOut, UserUpdate
 from schemas.token import Token
 from middleware.authentication import AuthHandler
 
 router = APIRouter()
 auth = AuthHandler()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/register", response_model=Token)
 async def register(user: UserRegister, db: Session = Depends(get_db)):
@@ -65,6 +58,20 @@ async def login(form_data: UserLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UserOut)
 async def read_users_me(current_user: User = Depends(auth.get_current_user)):
+    return current_user
+
+@router.put("/me", response_model=UserOut)
+async def update_users_me(
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(auth.get_current_user),
+):
+    current_user.name = data.name
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
     return current_user
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
